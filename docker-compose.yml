@@ -1,0 +1,38 @@
+services:
+  upstream01: &upstream
+    image: qorbani/golang-hello-world
+    ports:
+      - "3001:8080"
+    networks:
+      - lb
+
+  upstream02:
+    <<: *upstream
+    ports:
+      - "3002:8080"
+
+  raijin-lb:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.x86_64-linux-musl
+    networks:
+      - lb
+    depends_on:
+      - upstream01
+      - upstream02
+    ports:
+      - "9999:9999"
+    environment:
+      PORT: 9999
+    security_opt:
+      - seccomp:unconfined
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: '40MB'
+
+networks:
+  lb:
+    name: lb
+    driver: bridge

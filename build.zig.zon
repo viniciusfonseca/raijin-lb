@@ -1,0 +1,7 @@
+.{
+    .name = .raijin_lb,
+    .version = "0.0.1",
+    .minimum_zig_version = "0.15.2",
+    .paths = .{""},
+    .fingerprint = 0xd193a28c3e4cea92,
+}

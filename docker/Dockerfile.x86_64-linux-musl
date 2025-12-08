@@ -1,0 +1,26 @@
+FROM alpine:latest AS builder
+
+RUN apk add --no-cache make curl tar xz
+
+ARG ZIG_VERSION=0.15.2
+ARG ZIG_URL=https://ziglang.org/download/${ZIG_VERSION}/zig-x86_64-linux-${ZIG_VERSION}.tar.xz
+
+RUN curl -L ${ZIG_URL} -o /tmp/zig.tar.xz \
+    && tar -xf /tmp/zig.tar.xz -C /usr/local/bin --strip-components=1 \
+    && rm /tmp/zig.tar.xz
+
+ENV PATH="/usr/local/bin:$PATH"
+
+WORKDIR /app
+
+COPY . .
+
+RUN make
+
+FROM scratch
+
+WORKDIR /app
+
+COPY --from=builder /app/zig-out/bin/raijin-lb .
+
+ENTRYPOINT ["./raijin-lb"]
