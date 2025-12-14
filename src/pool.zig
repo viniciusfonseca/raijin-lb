@@ -73,14 +73,14 @@ pub const StreamPool = struct {
 
     pub fn init(allocator: std.mem.Allocator, host: []const u8) !*Self {
         var self = try allocator.create(StreamPool);
+        self.streams = try allocator.alloc(Stream, 128);
         self.upstream = host;
         return self;
     }
 
     pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
-        for (self.streams) |stream| {
-            allocator.destroy(stream);
-        }
+        allocator.free(self.streams);
+        allocator.destroy(self);
     }
 
     pub fn acquire(self: *Self, user_data: *RingUserData, ring: *os.linux.IoUring) !*Stream {
