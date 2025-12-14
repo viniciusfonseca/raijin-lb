@@ -74,6 +74,9 @@ pub const StreamPool = struct {
     pub fn init(allocator: std.mem.Allocator, host: []const u8) !*Self {
         var self = try allocator.create(StreamPool);
         self.streams = try allocator.alloc(Stream, 128);
+        for (self.streams) |*stream| {
+            stream.state = .idle;
+        }
         self.upstream = host;
         return self;
     }

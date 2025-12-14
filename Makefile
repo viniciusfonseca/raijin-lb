@@ -10,6 +10,10 @@ debug:
 run-debug:
 	TCP_UPSTREAMS=127.0.0.1:3001,127.0.0.1:3002 zig build run -Doptimize=Debug
 
+setup-docker:
+	sudo systemctl start docker
+	sudo chmod 666 /var/run/docker.sock
+
 run-docker:
 	docker compose down
 	docker compose up
