@@ -6,6 +6,7 @@ const assert = std.debug.assert;
 const RingUserData = @import("eventring.zig").RingUserData;
 
 const ParseIpError = error{InvalidIp};
+const StreamAcquireError = error{NoStreams};
 
 const StreamState = enum {
     idle,
@@ -50,16 +51,13 @@ pub const Stream = struct {
 
     const Self = @This();
 
-    pub fn init(allocator: std.mem.Allocator, user_data: *RingUserData, upstream: []const u8, ring: *os.linux.IoUring) !*Self {
+    pub fn request_socket(self: *Self, user_data: *RingUserData, upstream: []const u8, ring: *os.linux.IoUring) !void {
         const socket_addr = try parseIp(upstream);
 
         _ = try ring.socket(@intFromPtr(user_data), posix.AF.INET, posix.SOCK.STREAM, posix.IPPROTO.TCP, 0);
 
-        const stream = try allocator.create(Stream);
-        stream.state = .await_sock;
-        stream.upstream_address = socket_addr;
-
-        return stream;
+        self.state = .await_sock;
+        self.upstream_address = socket_addr;
     }
 
     pub fn deinit(self: Self) void {
@@ -68,7 +66,7 @@ pub const Stream = struct {
 };
 
 pub const StreamPool = struct {
-    streams: std.ArrayList(*Stream),
+    streams: []Stream,
     upstream: []const u8,
 
     const Self = @This();
@@ -76,32 +74,28 @@ pub const StreamPool = struct {
     pub fn init(allocator: std.mem.Allocator, host: []const u8) !*Self {
         var self = try allocator.create(StreamPool);
         self.upstream = host;
-        self.streams = try std.ArrayList(*Stream).initCapacity(allocator, 50);
         return self;
     }
 
     pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
-        for (self.streams.items) |stream| {
+        for (self.streams) |stream| {
             allocator.destroy(stream);
         }
-        self.streams.deinit(allocator);
     }
 
-    pub fn acquire(self: *Self, allocator: std.mem.Allocator, user_data: *RingUserData, ring: *os.linux.IoUring) !*Stream {
-        for (self.streams.items) |stream| {
+    pub fn acquire(self: *Self, user_data: *RingUserData, ring: *os.linux.IoUring) !*Stream {
+        for (self.streams) |*stream| {
             if (stream.state == .idle) {
-                stream.state = .active;
+                try stream.request_socket(user_data, self.upstream, ring);
                 return stream;
             }
         }
 
-        const stream = try Stream.init(allocator, user_data, self.upstream, ring);
-        try self.streams.append(allocator, stream);
-        return stream;
+        return StreamAcquireError.NoStreams;
     }
 
     pub fn findByClientId(self: *const Self, client_id: i32) ?*Stream {
-        for (self.streams.items) |stream| {
+        for (self.streams) |*stream| {
             if (stream.client_fd == client_id) {
                 return stream;
             }
@@ -109,18 +103,8 @@ pub const StreamPool = struct {
         return null;
     }
 
-    pub fn release(self: *Self, allocator: std.mem.Allocator, stream: *Stream) !void {
-        var indexOf: usize = 0;
-        var i: usize = 0;
-        for (self.streams.items) |s| {
-            if (s == stream) {
-                indexOf = i;
-                break;
-            }
-            i += 1;
-        }
-        _ = self.streams.swapRemove(indexOf);
-        allocator.destroy(stream);
+    pub fn release(_: *Self, stream: *Stream) !void {
+        stream.state = .idle;
     }
 };
 

@@ -1,6 +1,9 @@
 build:
 	zig build -Doptimize=ReleaseFast -Dtarget=x86_64-linux-musl
 
+small:
+	zig build -Doptimize=ReleaseSmall -Dtarget=x86_64-linux-musl
+
 debug:
 	zig build -Doptimize=Debug
 

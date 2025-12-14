@@ -94,7 +94,7 @@ pub const UpstreamsManager = struct {
                 user_data.upstream = upstream;
                 var upstream_pool = self.pools.get(upstream) orelse return ProxyError.InvalidUpstream;
 
-                var stream = try upstream_pool.acquire(allocator, user_data, &self.server.event_ring.ring);
+                var stream = try upstream_pool.acquire(user_data, &self.server.event_ring.ring);
                 stream.client_fd = user_data.client_fd.?;
                 if (stream.state == .await_sock) {
                     user_data.state = .await_sock;
@@ -140,7 +140,7 @@ pub const UpstreamsManager = struct {
                 const response = user_data.buffer[0..@intCast(cqe.res)];
                 _ = try self.server.event_ring.ring.send_zc(@intFromPtr(user_data), user_data.client_fd.?, response, 0, IOURING_SEND_ZC_FLAGS);
                 user_data.state = .send_client;
-                try upstream_pool.release(allocator, stream);
+                try upstream_pool.release(stream);
             },
             .send_client => {
                 _ = try self.server.event_ring.ring.close(@intFromPtr(user_data), user_data.client_fd.?);
