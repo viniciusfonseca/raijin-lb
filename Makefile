@@ -22,6 +22,10 @@ start-upstreams:
 	docker compose down
 	docker compose up -d upstream01 upstream02
 
+run-load-tests:
+	k6 run -e TARGET_LB_URL=http://127.0.0.1:9001 test/load-test.js
+	k6 run -e TARGET_LB_URL=http://127.0.0.1:9002 test/load-test.js
+
 clean:
 	du -sh .zig-cache
 	rm -rf .zig-cache

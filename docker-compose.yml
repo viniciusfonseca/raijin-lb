@@ -21,16 +21,23 @@ services:
       - upstream01
       - upstream02
     ports:
-      - "9999:9999"
+      - "9002:9002"
     environment:
-      PORT: 9999
+      PORT: 9002
     security_opt:
       - seccomp:unconfined
-    deploy:
-      resources:
-        limits:
-          cpus: '0.3'
-          memory: '40MB'
+
+  nginx:
+    image: nginx
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - upstream01
+      - upstream02
+    ports:
+      - "9001:9001"
+    networks:
+      - lb
 
 networks:
   lb:
