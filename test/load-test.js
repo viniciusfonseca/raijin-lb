@@ -2,8 +2,17 @@ import http from 'k6';
 import { check } from 'k6';
 
 export const options = {
-  vus: 10,
-  duration: '30s',
+  scenarios: {
+    ramping_test: {
+      executor: 'ramping-vus',
+      startVUs: 0,
+      stages: [
+        { duration: '15s', target: __ENV['VUS'] || 100 },
+        { duration: '30s', target: __ENV['VUS'] || 100 },
+      ],
+      gracefulRampDown: '5s',
+    },
+  },
 };
 
 export default function () {

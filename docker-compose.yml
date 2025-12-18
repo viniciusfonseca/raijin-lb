@@ -24,6 +24,7 @@ services:
       - "9002:9002"
     environment:
       PORT: 9002
+      TCP_UPSTREAMS: 127.0.0.1:3001,127.0.0.1:3002
     security_opt:
       - seccomp:unconfined
 

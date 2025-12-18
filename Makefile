@@ -16,15 +16,15 @@ setup-docker:
 
 run-docker:
 	docker compose down
-	docker compose up
+	docker compose up -d
 
 start-upstreams:
 	docker compose down
 	docker compose up -d upstream01 upstream02
 
 run-load-tests:
-	k6 run -e TARGET_LB_URL=http://127.0.0.1:9001 test/load-test.js
-	k6 run -e TARGET_LB_URL=http://127.0.0.1:9002 test/load-test.js
+	k6 run -e TARGET_LB_URL=http://127.0.0.1:9001 -e VUS=100 test/load-test.js
+	k6 run -e TARGET_LB_URL=http://127.0.0.1:9002 -e VUS=100 test/load-test.js
 
 clean:
 	du -sh .zig-cache
