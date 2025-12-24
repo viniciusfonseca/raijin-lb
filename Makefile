@@ -16,6 +16,10 @@ setup-docker:
 
 run-docker:
 	docker compose down
+	docker compose up -d
+
+run-docker-build:
+	docker compose down
 	docker compose up --build -d
 
 start-upstreams:
