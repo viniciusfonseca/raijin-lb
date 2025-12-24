@@ -16,7 +16,6 @@ pub fn main() !void {
 
     const buffer = try std.heap.page_allocator.alloc(u8, fba_mem_size * 1024 * 1024);
     var fba = std.heap.FixedBufferAllocator.init(buffer);
-    defer _ = fba.deinit();
     const allocator = fba.allocator();
 
     var event_ring = EventRing.init() catch |err| {
