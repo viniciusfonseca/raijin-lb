@@ -16,26 +16,21 @@ const StreamState = enum {
 };
 
 fn parseIp(ip: []const u8) !std.net.Address {
-    var stream = std.io.fixedBufferStream(ip);
-    const reader = stream.reader();
-    var byte: u8 = undefined;
-    var parsed_ip = [4]u8{ 0, 0, 0, 0 };
-    var index: usize = 0;
+    var parsed_ip: [4]u8 = .{ 0, 0, 0, 0 };
+    var port: u16 = undefined;
 
-    while (true) {
-        byte = reader.readByte() catch break;
-        switch (byte) {
-            '0'...'9' => parsed_ip[index] = parsed_ip[index] * 10 + (byte - '0'),
-            '.' => index += 1,
-            ':' => break,
-            else => return ParseIpError.InvalidIp,
-        }
-    }
-    var port: u16 = 0;
-    while (true) {
-        byte = reader.readByte() catch break;
-        switch (byte) {
-            '0'...'9' => port = port * 10 + (byte - '0'),
+    var it = std.mem.tokenizeAny(u8, ip, ".:");
+    var i: usize = 0;
+    while (it.next()) |token| {
+        switch (i) {
+            0, 1, 2, 3 => {
+                parsed_ip[i] = try std.fmt.parseInt(u8, token, 10);
+                i += 1;
+            },
+            4 => {
+                port = try std.fmt.parseInt(u16, token, 10);
+                break;
+            },
             else => return ParseIpError.InvalidIp,
         }
     }
