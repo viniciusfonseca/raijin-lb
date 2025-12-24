@@ -9,9 +9,15 @@ const EventRing = @import("eventring.zig").EventRing;
 const UpstreamsManager = @import("upstreams.zig").UpstreamsManager;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+    const fba_mem_size_str = std.process.getEnvVarOwned(std.heap.page_allocator, "BUFFER_MEM_SIZE") catch "32";
+    const fba_mem_size = std.fmt.parseInt(usize, fba_mem_size_str, 10) catch |err| {
+        std.debug.panic("failed to parse buffer memory size: {}", .{err});
+    };
+
+    const buffer = try std.heap.page_allocator.alloc(u8, fba_mem_size * 1024 * 1024);
+    var fba = std.heap.FixedBufferAllocator.init(buffer);
+    defer _ = fba.deinit();
+    const allocator = fba.allocator();
 
     var event_ring = EventRing.init() catch |err| {
         std.debug.panic("failed to init event ring: {}", .{err});
