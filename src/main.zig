@@ -52,5 +52,3 @@ pub fn main() !void {
         }
     }
 }
-
-test "basic load balancing" {}
